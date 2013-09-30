@@ -4,76 +4,90 @@ import itertools
 import os
 import subprocess
 import random, sys
-sys.path.append('~/.config/sublime-text-2/GGU-SL/config.py')
-from config import Config
-
+import shelve
 
 class GguCommand(sublime_plugin.TextCommand):
 
-	def run(self, edit):
+    def run(self, edit):
 
-		path, row = self.get_path(edit)
-		slpath = path+'L#'+str(row)
-		URL = MakeURL().geturl(slpath)
-		sublime.set_clipboard(URL)
+        # Generate file path and position
+        path, row = self.get_path(edit)
+        self.slpath = path+"L#"+str(row)
 
-	def get_path(self,edit):
+        self.d = sublime.load_settings("ggu.sublime-settings")
+        URL = MakeURL().geturl(self.slpath, self.d)
+
+        if URL:
+            sublime.set_clipboard(URL)
+
+    def get_user(self, username):
+
+        
+        user = username.split(":")[0]
+        pw = username.split(":")[1]
+        self.d["user"] = user
+        self.d["pw"] = pw
+        URL = MakeURL().geturl(self.slpath, self.d)
+        return URL
+
+    def get_path(self,edit):
 
 	    (row,col) = self.view.rowcol(self.view.sel()[0].begin())
 	    return (self.view.file_name(),row + 1 )
 
 class MakeURL(object):
-    """
-        This class generate the URL and copy it to clipboard
-    """
-    def __init__(self):
 
+    def __init__(self):
+        
         self.dicpath = None
         self.path =  None
 
-    def getrepo(self, path):
+    def getrepo(self, path, d):
         """
             get the git repositories
         """
 
-        self.path = path 
+        self.path = path.strip('') 
         self.dicpath = path.split('/')[1:]
 
         repoin = self.dicpath[0]
 
-        pw = Config().get_pw()
- 
-        p2 = subprocess.Popen('echo ' + pw +' |sudo -S find /'+ repoin+ ' -type d -name .git | xargs -n 1 dirname ',shell=True, stdin=subprocess.PIPE,
-                              stdout=subprocess.PIPE,stderr=subprocess.PIPE)
+        p2 = subprocess.Popen('echo ' + d.get("pw") +' |sudo -S locate -r \'\.git$\'| xargs -n 1 dirname ',shell=True, stdin=subprocess.PIPE,
+                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         output = p2.communicate()
-    
-        dirs = output[0].split("\n")
+        output = output[0].strip()
+        dirs = output.split("\n")
 
+        print dirs
         sorted_dict = []
-
         for i in dirs:
             for m,n in zip(i.split("/")[1:],self.dicpath):
                 if m != n:
                     i = []
-            sorted_dict.append(i)
+            if type(i) is not list:
+                sorted_dict.append(i)
 
         def IsEmpty(inList):
-            if isinstance(inList, list): # Is a list
+            if isinstance(inList, list):
                 return all( map(IsEmpty, inList) )
             return False 
 
         if IsEmpty(sorted_dict):
-            print "I only work on git repo!!"
-            sys.exit()
+            sublime.error_message("This file is not in a git repo")  
+            return None
+
         else:
             return sorted_dict
 
-    def geturl (self, path):
+    def geturl (self, path, d):
         """
             generate the url
         """
-        dirs = self.getrepo(path)
+        dirs = self.getrepo(path, d)
+        if dirs is None:
+            return None
+
         maxlength = max(s for s in dirs)
 
         b = []
@@ -89,15 +103,15 @@ class MakeURL(object):
                 b.append(i)
 
         branch = self.get_branch(maxlength)
-        user = Config().get_username()
 
-        URL = ["http:/","github.com",user,lleng[len(lleng)-1],"blob",branch]  
+
+        URL = ["http:/","github.com",d.get("username"),lleng[len(lleng)-1],"blob",branch]  
 
         for i in b:
              URL.append(i)
 
         URL = "/".join(URL)
-
+        
         return URL
 
     def get_branch(self,ml):
