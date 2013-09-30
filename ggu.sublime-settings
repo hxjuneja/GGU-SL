@@ -1,6 +1,8 @@
 {
-  "username" : "hardikj"
+  // Enter your github user name here
+  "username" : ""
 
-  ,"pw" : "wtfcall911"
+  // Enter your sudo password here
+  ,"pw" : ""
 
 }
