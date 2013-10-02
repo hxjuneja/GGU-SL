@@ -1,33 +1,29 @@
 import sublime, sublime_plugin
 import itertools
 import os
-import subprocess
+import re
 import random, sys
-import shelve
+
 
 class GguCommand(sublime_plugin.TextCommand):
 
     def run(self, edit):
 
+
         # Generate file path and position
-        path, row = self.get_path(edit)
-        if path:
-            slpath = path+"#L"+str(row)
+        (row,col) = self.view.rowcol(self.view.sel()[0].begin())
+        row = row + 1
+        path = os.path.realpath(self.view.file_name()) 
+        path = path + "#L" + str(row)
 
-        # Generate URL
-        self.d = sublime.load_settings("ggu.sublime-settings")
-        URL = MakeURL().geturl(slpath, self.d)
+        # Get remotes
+        settings = sublime.load_settings("ggu.sublime-settings")
+        URL = MakeURL().getremotes(path, settings, remote = False)
 
-        # Paste URL
         if URL:
             sublime.set_clipboard(URL)
-
-    def get_path(self,edit):
-        """
-            Get current filename and position
-        """
-	    (row,col) = self.view.rowcol(self.view.sel()[0].begin())
-	    return (self.view.file_name(),row + 1 )
+            sublime.status_message('Copied %s to clipboard.' % URL)
+            print('Copied %s to clipboard.' % URL)
 
 class GgurCommand(sublime_plugin.TextCommand):
 
@@ -37,18 +33,26 @@ class GgurCommand(sublime_plugin.TextCommand):
         self.fremotes = []
 
         # Generate file path and position
-        path, row = self.get_path(edit)
-        if path:
-            slpath = path + "#L" + str(row)
+        (row,col) = self.view.rowcol(self.view.sel()[0].begin())
+        row = row + 1
+        path = os.path.realpath(self.view.file_name()) 
+        path = path + "#L" + str(row)
 
         # Get remotes
-        self.d = sublime.load_settings("ggu.sublime-settings")
-        (remotes,b) = MakeURL().geturl(slpath,self.d, remote = True)
-        self.b = b
+        settings = sublime.load_settings("ggu.sublime-settings")
+        remotes_stuff = MakeURL().getremotes(path, settings, remote = True)
 
+        if remotes_stuff is None:
+            return
+
+        remotes = remotes_stuff[0]
+        alises = remotes_stuff[1]
+        self.b = remotes_stuff[2]
+
+        for a in alises:
+            self.items.append(a)
         for r in remotes:
-            self.items.append(r[0])
-            self.fremotes.append(r[1])
+            self.fremotes.append("https://github.com/"+r[0]+"/"+r[1])
 
         # show quick panel
         self.view.window().show_quick_panel(self.items, self.on_done)
@@ -60,8 +64,7 @@ class GgurCommand(sublime_plugin.TextCommand):
 
         URL = self.fremotes[index]
         URL = URL + "/blob/master"
-        for bb in self.b:
-            URL = URL + "/" + bb
+        URL = URL + self.b
         self.paste_url(URL)
 
     def paste_url(self, URL):
@@ -71,147 +74,79 @@ class GgurCommand(sublime_plugin.TextCommand):
 
         if URL:
             sublime.set_clipboard(URL)
-
-    def get_path(self, edit):
-        """
-            Generate current file path and position
-        """
-
-        (row,col) = self.view.rowcol(self.view.sel()[0].begin())
-        return (self.view.file_name(),row + 1 )              
+            sublime.status_message('Copied %s to clipboard.' % URL)
+            print('Copied %s to clipboard.' % URL)
 
 class MakeURL(object):
 
-    def __init__(self):
-        
-        self.dicpath = None
-        self.path =  None
-
-    def getrepo(self, path, d):
-        """
-            Get all git repositories
-        """
-
-        self.path = path.strip('') 
-        self.dicpath = path.split('/')[1:]
-
-        repoin = self.dicpath[0]
-        pw = d.get("pw")
-
-        if pw == "":
-            sublime.error_message("Pleaes edit your ggu.sublime-settings file")
-
-        p2 = subprocess.Popen('echo ' + pw +' |sudo -S locate -r \'\.git$\'| xargs -n 1 dirname ',shell=True, stdin=subprocess.PIPE,
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-        output = p2.communicate()
-        output = output[0].strip()
-        dirs = output.split("\n")
-        sorted_dict = []
-        for i in dirs:
-            for m,n in zip(i.split("/")[1:],self.dicpath):
-                if m != n:
-                    i = []
-            if type(i) is not list:
-                sorted_dict.append(i)
-
-
-        def IsEmpty(inList):
-            if isinstance(inList, list):
-                return all( map(IsEmpty, inList) )
-            return False 
-
-        if IsEmpty(sorted_dict):
-            sublime.error_message("This file is not in a git repo")  
+    def find_dir(self, path, folder):
+        items = os.listdir(path)
+        if folder in items and os.path.isdir(os.path.join(path, folder)):
+            return path
+        dirname = os.path.dirname(path)
+        if dirname == path:
             return None
+        return self.find_dir(dirname, folder)
 
-        else:
-            return sorted_dict
-
-    def geturl (self, path, d, remote = None):
+    def getremotes (self, path, settings, remote = None):
         """
             Generate the url
         """
-        dirs = self.getrepo(path, d)
-        if dirs is None:
-            return None
 
-        maxlength = max(s for s in dirs)
+        folder_name, file_name = os.path.split(path)
+        git_path = self.find_dir(folder_name, '.git')
 
-        b = []
+        if not git_path:
+            sublime.error_message('Could not find .git directory.')
+            print('Could not find .git directory.')
+            return
 
-        lleng = maxlength.split('/')[1:]
-
-        self.pstatus()
-
-        for i,j in itertools.izip_longest(self.dicpath,lleng):
-            if j is not None:
-                continue
-            else:
-                b.append(i)
+        new_path = folder_name[len(git_path):]
 
         username = ""
-        if remote is True:
-            r = self.get_remote_branch(maxlength)
-            return (r,b)
+        username = settings.get("username")
+        if username == "":
+            sublime.error_message("Pleaes edit your ggu.sublime-settings file")
 
-        else:    
-            username = d.get("username")
-            if username == "":
-                sublime.error_message("Pleaes edit your ggu.sublime-settings file")
-
-        branch = self.get_branch(maxlength)
-        URL = ["https:/", "github.com", username, lleng[len(lleng)-1], "blob",branch]  
-        for i in b:
-             URL.append(i)
-
-        URL = "/".join(URL)
+        URL_path = new_path+"/"+file_name
+        branch = self.get_branch( git_path)
         
+        if remote is True:
+            remote_alias, remotes = self.get_remote_branch(git_path, folder_name)
+            return (remotes, remote_alias, URL_path)
+
+        repo = path[:len(path)-len(URL_path)].split("/")
+        repo = repo[len(repo)-1:][0]
+
+        URL = "https://github.com/%s/%s/blob/%s%s"%(username, repo,branch,URL_path)
         return URL
 
-    def get_remote_branch(self, ml):
+    def get_remote_branch(self, git_path, folder_name):
         """
             Get remote branches
         """
 
-        remotes = []   
-        os.chdir(ml)
-        p1 = subprocess.Popen(["git", "remote", "-v"], stdout = subprocess.PIPE)
-        output = p1.communicate()
-        for o in output[0].split("\n")[::2]:
-            if o != "":
-                o = o.split(" ")[0].split("\t")
-                o[1] = o[1].split(".git")[0]
-                remotes.append(o)
-        return remotes 
+        gitc_path = os.path.join(git_path, '.git', 'config')
 
-    def get_branch(self, ml):
+        with open(gitc_path, "r") as git_config_file:
+            config = git_config_file.read()
+
+        r1 = r'(?:remote\s\")(.*?)\"\]'
+        raliases = re.findall(r1,config)
+
+        r2 = r'url\s=\s(?:https://%s/|%s:|git://%s)(.*)/(.*?)(?:\.git)'%('github.com', 'github.com', 'github.com')
+        remotes = re.findall(r2,config)
+
+        return  raliases, remotes
+        
+    def get_branch(self, git_path):
         """
             get current branch of the required repo
         """
-        os.chdir(ml)
-        p1 = subprocess.Popen(["git","branch"], stdout=subprocess.PIPE)
-        output = p1.communicate()
-        branch = None
 
-        output = output[0].split("\n")
-        for i in output:
-            b = i.strip().split(" ")
-            for j in b:
-                if j == "*":
-                    branch = max(b)
-                    break
+        ref = open(os.path.join(git_path, '.git', 'HEAD'), "r").read().replace('ref: ', '')[:-1]
+        branch = ref.replace('refs/heads/','')
 
         return branch
  
-    def pstatus(self):
-
-        status = ["what the fuck are you waiting for, check your clipboard!!", 
-                  "You are free to Paste the URL!!", 
-                  "Guess What? you can now paste the url",
-                  "Why dont you paste the URL??", 
-                  "your work is done", 
-                  "URL copied to clipboard!!" ]
-        s = random.randint(0,5)
-        print status[s]
  

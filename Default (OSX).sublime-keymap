@@ -1,8 +1,8 @@
 [  
     {   
-        "keys": ["Option+alt+g"], "command": "ggu"
+        "keys": ["super+alt+g"], "command": "ggu"
     },
     {
-        "Keys": ["Option+alt+r"], "command": "ggur"
+        "Keys": ["super+alt+r"], "command": "ggur"
     }
 ] 
