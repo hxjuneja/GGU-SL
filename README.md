@@ -44,16 +44,22 @@ $ git clone git://github.com/kemayo/sublime-text-2-git.git Git
 
   2. press `ctrl + alt + r`
 
-  3. Boom! you are free to paste the URL.
+  3. Choose your remote repo.
+
+  4. Boom! you are free to paste the URL.
+  
+  ![remote](http://s13.postimg.org/oudt9sk07/choose_remote.png)
 
 
-3.  Usage 
+3.  Quickly Generate URL  -  
 
   1. Go to the file in a git repo.
 
   2. press `ctrl + alt + g`
 
   3. Boom! you are free to paste the URL.
+  
+  Note - This automatically detect your current branch you are working on
 
 
 4.  You are free to change the key bindings.
