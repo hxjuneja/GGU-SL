@@ -1,55 +1,63 @@
 ## About
 
-Get Git Url (GGU) is a [Sublime-Text 2] plugin that generate a GitHub repo URL for you from your editor itself.
+Get Git Url (GGU) is a Sublime-Text plugin that generate Github URL of the file you are on, from your editor and paste it to clipboard.
 
 ## Usage
 
+I want my editor to quickly generate the Github URL for the file I am working on without jumping to the browser to   
+search for the file and line of the code and paste the URL to share it.
 
-GGU helps you share the code in your remote repo (GitHub) from your local repo,
-So there's no need to search for your code and the line no in GitHub and then paste the URL to share it
-You can do all this very easily from your editor.
+So I made this.
 
-Here's how
+## Install
 
-1. Go to the file and line no using Vim.
+### Package Control
 
-2. press `ctrl + alt + g`
+The easiest way to install this is with [Package Control](http://wbond.net/sublime\_packages/package\_control).
 
-3. Boom! you are free to paste the URL.
+### Other Methods
+
+#### OSX
+
+```
+$ cd ~/Library/Application\ Support/Sublime\ Text\ 2/Packages/
+$ git clone git://github.com/kemayo/GGU-SL.git 
+```
+
+#### Linux
+
+```
+$ cd ~/.config/sublime-text-2/Packages/
+$ git clone git://github.com/kemayo/sublime-text-2-git.git Git
+```
+
+## Get Started
+
+1. Configure GGU:
+
+  Before you can start you need to edit ggu.sublime-setting.py.
 
 
-##  Quick Start
+2.  Generate remote repo URL
 
-1. Setup GGU:
+  1. Go to the file in a git repo.
 
-  dowload the source code from [[here]]
+  2. press `ctrl + alt + r`
 
-  ```
-  cd ~/.config/sublime-text 2/Installed Packages
-  ```
+  3. Boom! you are free to paste the URL.
 
-2. Configure GGU:
 
-  Before you can start you need to edit config.py.
+3.  Usage 
 
-  ```
-  cd ~/.config/sublime-text 2/Installed Packages/
+  1. Go to the file in a git repo.
 
-  ```
-  Open the GGU-SL.sublime.package and open a file config.py
+  2. press `ctrl + alt + g`
 
-  In this file add the following
-  
-  ```
-   def __init__(self):
-   
-        " Your Github Username
-        self.username = "hardikj"
-        
-        " Your Shell(sudo) Password
-        self.pw = ""  
-        
-  ```
+  3. Boom! you are free to paste the URL.
+
+
+4.  You are free to change the key bindings.
+
 
 Thats It!! Enjoy.
 
