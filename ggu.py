@@ -21,9 +21,12 @@ class GguCommand(sublime_plugin.TextCommand):
         URL = MakeURL().getremotes(path, settings, remote = False)
 
         if URL:
-            sublime.set_clipboard(URL)
-            sublime.status_message('Copied %s to clipboard.' % URL)
-            print('Copied %s to clipboard.' % URL)
+            if URL == "panelcall":
+                self.view.run_command("ggur")
+            else:
+                sublime.set_clipboard(URL)
+                sublime.status_message('Copied %s to clipboard.' % URL)
+                print('Copied %s to clipboard.' % URL)
 
 class GgurCommand(sublime_plugin.TextCommand):
 
@@ -62,10 +65,13 @@ class GgurCommand(sublime_plugin.TextCommand):
             called when the remote is selected
         """
 
-        URL = self.fremotes[index]
-        URL = URL + "/blob/master"
-        URL = URL + self.b
-        self.paste_url(URL)
+        if index >= 0:
+            URL = self.fremotes[index]
+            URL = URL + "/blob/master"
+            URL = URL + self.b
+            self.paste_url(URL)
+        else:
+            print "you canceled it."
 
     def paste_url(self, URL):
         """
@@ -109,11 +115,28 @@ class MakeURL(object):
             sublime.error_message("Pleaes edit your ggu.sublime-settings file")
 
         URL_path = new_path+"/"+file_name
-        branch = self.get_branch( git_path)
-        
-        if remote is True:
-            remote_alias, remotes = self.get_remote_branch(git_path, folder_name)
+        branch = self.get_branch(git_path)
+
+        remote_alias, remotes = self.get_remote_branch(git_path, folder_name)
+
+        if remote is True :
             return (remotes, remote_alias, URL_path)
+
+        if "origin" in remote_alias:
+            index = remote_alias.index("origin")
+            r = remotes[index]
+            username = r[0]
+        else:
+            for u in remotes:
+                if u[0] == username:
+                    match = username
+                    break;
+                else:
+                    match = None
+            username = match
+
+        if username is None:
+            return "panelcall"
 
         repo = path[:len(path)-len(URL_path)].split("/")
         repo = repo[len(repo)-1:][0]
@@ -134,8 +157,13 @@ class MakeURL(object):
         r1 = r'(?:remote\s\")(.*?)\"\]'
         raliases = re.findall(r1,config)
 
-        r2 = r'url\s=\s(?:https://%s/|%s:|git://%s)(.*)/(.*?)(?:\.git)'%('github.com', 'github.com', 'github.com')
+        host = 'github.com'
+        r2 = r'url\s=\s(?:https://%s/|%s:|git://%s|git@%s:)(.*)/(.*?)(?:\.git)'%(host, host, host, host)
         remotes = re.findall(r2,config)
+
+        if remotes is None:
+            self.error_message("No remotes found")
+            return None
 
         return  raliases, remotes
         

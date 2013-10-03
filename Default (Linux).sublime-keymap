@@ -1,5 +1,9 @@
 [  
     {   
         "keys": ["ctrl+alt+g"], "command": "ggu"   
-    }  
+    },
+
+    {
+        "keys": ["ctrl+alt+r"], "command": "ggu"
+    }
 ]  

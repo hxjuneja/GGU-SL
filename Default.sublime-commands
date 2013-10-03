@@ -1,0 +1,10 @@
+[
+    {
+        "caption": "Get Git URL: Get remote URL ",
+        "command": "ggur"
+    },
+    {
+        "caption": "Get Git URL: Get quick URL",
+        "command": "ggu"
+    },
+]
