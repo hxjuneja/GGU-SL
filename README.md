@@ -4,8 +4,7 @@ Get Git Url (GGU) is a Sublime-Text plugin that generate Github URL of the file 
 
 ## Usage
 
-I want my editor to quickly generate the Github URL for the file I am working on without jumping to the browser to   
-search for the file and line of the code and paste the URL to share it.
+I want my editor to quickly generate the Github URL for me without jumping to the browser to yank the URL of file.
 
 So I made this.
 
@@ -14,6 +13,11 @@ So I made this.
 ### Package Control
 
 The easiest way to install this is with [Package Control](http://wbond.net/sublime\_packages/package\_control).
+
+ * If you just went and installed Package Control, you probably need to restart Sublime Text 2 before doing this next bit.
+ * Bring up the Command Palette (Command+Shift+p on OS X, Control+Shift+p on Linux/Windows).
+ * Select "Package Control: Install Package" (it'll take a few seconds)
+ * Select GGU when the list appears.
 
 ### Other Methods
 
