@@ -112,7 +112,7 @@ class MakeURL(object):
         username = ""
         username = settings.get("username")
         if username == "":
-            sublime.error_message("Pleaes edit your ggu.sublime-settings file")
+            sublime.error_message("Please edit your ggu.sublime-settings file")
 
         URL_path = new_path+"/"+file_name
         branch = self.get_branch(git_path)
