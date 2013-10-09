@@ -3,6 +3,6 @@
         "keys": ["super+alt+g"], "command": "ggu"
     },
     {
-        "Keys": ["super+alt+r"], "command": "ggur"
+        "keys": ["super+alt+r"], "command": "ggur"
     }
 ] 

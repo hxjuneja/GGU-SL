@@ -6,5 +6,5 @@
     {
         "caption": "Get Git URL: Get quick URL",
         "command": "ggu"
-    },
+    }
 ]
